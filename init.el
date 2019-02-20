@@ -1,3 +1,14 @@
+;; ************************************
+;; You may want to remove this section!
+(set-language-environment "Korean")
+;; ************************************
+
+;; Let's make Emacs shut-up
+(setq enable-local-variables :safe)
+
+;; Fullscreen Emacs
+(add-to-list 'default-frame-alist '(fullscreen . maximized))
+
 ;; Turn off mouse interface early in startup to avoid momentary display
 (if (fboundp 'menu-bar-mode) (menu-bar-mode -1))
 (if (fboundp 'tool-bar-mode) (tool-bar-mode -1))

@@ -28,9 +28,10 @@
 
 (defun use-default-theme ()
   (interactive)
-  (load-theme 'default-black)
-  (when (boundp 'magnars/default-font)
-    (set-face-attribute 'default nil :font magnars/default-font)))
+  (load-theme 'tsdh-dark)
+  (when (member user-login-name '("jchoi" "jc"))
+    (custom-set-faces
+     '(default ((t (:family "Ubuntu Mono" :foundry "unknown" :slant normal :weight normal :height 188 :width normal)))))))
 
 (defun toggle-presentation-mode ()
   (interactive)

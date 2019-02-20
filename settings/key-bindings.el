@@ -1,8 +1,3 @@
-;; I don't need to kill emacs that easily
-;; the mnemonic is C-x REALLY QUIT
-(global-set-key (kbd "C-x r q") 'save-buffers-kill-terminal)
-(global-set-key (kbd "C-x C-c") 'delete-frame)
-
 ;; Completion that uses many different methods to find options.
 (global-set-key (kbd "C-.") 'hippie-expand-no-case-fold)
 (global-set-key (kbd "C-:") 'hippie-expand-lines)
@@ -309,9 +304,6 @@
 
 ;; Find files by name and display results in dired
 (global-set-key (kbd "M-s f") 'find-name-dired)
-
-;; Find file in project
-(global-set-key (kbd "C-x o") 'find-file-in-project)
 
 ;; Find file in project, with specific patterns
 (global-unset-key (kbd "C-x C-o")) ;; which used to be delete-blank-lines (also bound to C-c C-<return>)
