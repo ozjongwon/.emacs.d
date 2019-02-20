@@ -1,4 +1,5 @@
 (require 'clojure-mode)
+
 (require 'clojure-mode-extra-font-locking)
 
 (defadvice clojure-test-run-tests (before save-first activate)
@@ -244,6 +245,7 @@
     (goto-char original-point)))
 
 (define-key clojure-mode-map (kbd "C-`") 'live-cycle-clj-coll)
+(define-key clojure-mode-map (kbd "C-t") 'cider-toggle-trace-var)
 
 ;; Warn about missing nREPL instead of doing stupid things
 
