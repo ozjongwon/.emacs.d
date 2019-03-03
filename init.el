@@ -1,6 +1,6 @@
-;; ************************************
 ;; You may want to remove this section!
 (set-language-environment "Korean")
+(prefer-coding-system 'utf-8)
 ;; ************************************
 
 ;; Let's make Emacs shut-up
@@ -85,6 +85,7 @@
      cider
      clojure-mode
      clojure-mode-extra-font-locking
+     clj-refactor
      css-eldoc
      diff-hl
      dockerfile-mode
@@ -123,7 +124,19 @@
      wgrep
      whitespace-cleanup-mode
      yasnippet
-     )))
+     buster-snippets
+     angular-snippets
+     datomic-snippets
+     find-file-in-project
+     expand-region
+     multiple-cursors
+     jump-char
+     change-inner
+     multifiles
+     browse-kill-ring
+     tagedit
+     smart-forward
+     smex)))
 
 (condition-case nil
     (init--install-packages)
@@ -261,4 +274,3 @@
 ;; Conclude init by setting up specifics for the current user
 (when (file-exists-p user-settings-dir)
   (mapc 'load (directory-files user-settings-dir nil "^[^#].*el$")))
-
