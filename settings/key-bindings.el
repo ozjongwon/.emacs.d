@@ -59,7 +59,7 @@
 (global-set-key (kbd "C-c C-<return>") 'delete-blank-lines)
 
 ;; M-i for back-to-indentation
-(global-set-key (kbd "M-i") 'back-to-indentation)
+;;(global-set-key (kbd "M-i") 'back-to-indentation)
 
 ;; Turn on the menu bar for exploring new modes
 (global-set-key (kbd "C-<f10>") 'menu-bar-mode)
@@ -277,7 +277,7 @@
 ;; Increase number at point (or other change based on prefix arg)
 (global-set-key (kbd "C-+") 'change-number-at-point)
 (global-set-key (kbd "C-?") 'subtract-number-at-point)
-(eval-after-load 'undo-tree '(define-key undo-tree-map (kbd "C-?") nil))
+;;(eval-after-load 'undo-tree '(define-key undo-tree-map (kbd "C-?") nil))
 
 ;; Browse the kill ring
 (global-set-key (kbd "C-x C-y") 'browse-kill-ring)

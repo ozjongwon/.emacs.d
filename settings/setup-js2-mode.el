@@ -68,8 +68,8 @@
 (defun js2r--remove-all-this-cruft-on-backward-delete ()
   (set-temporary-overlay-map
    (let ((map (make-sparse-keymap)))
-     (define-key map (kbd "DEL") 'undo-tree-undo)
-     (define-key map (kbd "C-h") 'undo-tree-undo)
+;;     (define-key map (kbd "DEL") 'undo-tree-undo)
+;;     (define-key map (kbd "C-h") 'undo-tree-undo)
      map) nil))
 
 (defun js2r--self-insert-closing (open close)

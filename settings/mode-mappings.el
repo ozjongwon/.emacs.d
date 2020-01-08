@@ -1,3 +1,16 @@
+;; Maxima
+(autoload 'maxima-mode "maxima-mode")
+(autoload 'imaxima "imaxima" "Frontend of Maxima CAS" t)
+(autoload 'imath "imath" "Interactive Math mode" t)
+(autoload 'imath-mode "imath" "Interactive Math mode" t)
+(add-to-list 'auto-mode-alist '("\\.mac$" . maxima-mode))
+(add-to-list 'auto-mode-alist '("\\.mc$" . maxima-mode))
+(add-to-list 'auto-mode-alist '("\\.max$" . maxima-mode))
+
+;; Prolog
+(autoload 'prolog-mode "prolog" "Major mode for editing Prolog programs." t)
+(add-to-list 'auto-mode-alist '("\\.pl\\'" . prolog-mode))
+
 ;; YAML
 (autoload 'yaml-mode "yaml-mode")
 (add-to-list 'auto-mode-alist '("\\.yml$" . yaml-mode))

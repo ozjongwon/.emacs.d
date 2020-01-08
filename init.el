@@ -9,6 +9,13 @@
 ;; Fullscreen Emacs
 (add-to-list 'default-frame-alist '(fullscreen . maximized))
 
+;; Half screen(minimize)
+(alist-get 'width (frame-parameters))
+(add-to-list 'initial-frame-alist '(left + -10))
+(add-to-list 'initial-frame-alist '(top . 19))
+(add-to-list 'initial-frame-alist '(height . 39))
+(add-to-list 'initial-frame-alist '(width . 97))
+
 ;; Turn off mouse interface early in startup to avoid momentary display
 (if (fboundp 'menu-bar-mode) (menu-bar-mode -1))
 (if (fboundp 'tool-bar-mode) (tool-bar-mode -1))
@@ -197,6 +204,8 @@
 (eval-after-load 'ruby-mode '(require 'setup-ruby-mode))
 (eval-after-load 'clojure-mode '(require 'setup-clojure-mode))
 (eval-after-load 'markdown-mode '(require 'setup-markdown-mode))
+(eval-after-load 'prolog-mode '(require 'setup-prolog-mode))
+(eval-after-load 'maxima-mode '(require 'setup-maxima-mode))
 
 ;; Load stuff on demand
 (autoload 'skewer-start "setup-skewer" nil t)
@@ -274,3 +283,7 @@
 ;; Conclude init by setting up specifics for the current user
 (when (file-exists-p user-settings-dir)
   (mapc 'load (directory-files user-settings-dir nil "^[^#].*el$")))
+
+;; Lisp
+(setq inferior-lisp-program "~/bin/ccl")
+(setq slime-contribs '(slime-fancy))
