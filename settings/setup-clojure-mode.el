@@ -8,14 +8,6 @@
 (defadvice nrepl-load-current-buffer (before save-first activate)
   (save-buffer))
 
-(require 'clj-refactor)
-
-(setq cljr-favor-prefix-notation nil)
-(setq cljr-favor-private-functions nil)
-
-(cljr-add-keybindings-with-modifier "C-s-")
-(define-key clj-refactor-map (kbd "C-x C-r") 'cljr-rename-file)
-
 (define-key clojure-mode-map [remap paredit-forward] 'clojure-forward-logical-sexp)
 (define-key clojure-mode-map [remap paredit-backward] 'clojure-backward-logical-sexp)
 
@@ -26,24 +18,8 @@
   (when (not (s-ends-with-p "/dev/user.clj" (buffer-file-name)))
     (core-async-mode 1)))
 
-(add-hook 'clojure-mode-hook 'enable-clojure-mode-stuff)
-
 (require 'symbol-focus)
 (define-key clojure-mode-map (kbd "M-s-f") 'sf/focus-at-point)
-
-(defun clj-duplicate-top-level-form ()
-  (interactive)
-  (save-excursion
-    (cljr--goto-toplevel)
-    (insert (cljr--extract-sexp) "\n")
-    (cljr--just-one-blank-line)))
-
-(define-key clojure-mode-map (kbd "M-s-d") 'clj-duplicate-top-level-form)
-
-(add-to-list 'cljr-project-clean-functions 'cleanup-buffer)
-
-(define-key clojure-mode-map (kbd "C->") 'cljr-thread)
-(define-key clojure-mode-map (kbd "C-<") 'cljr-unwind)
 
 (define-key clojure-mode-map (kbd "s-j") 'clj-jump-to-other-file)
 
@@ -131,9 +107,6 @@
   (add-watch 2)
   (async 1))
 
-;; Don't warn me about the dangers of clj-refactor, fire the missiles!
-(setq cljr-warn-on-eval nil)
-
 ;; Use figwheel for cljs repl
 
 (setq cider-cljs-lein-repl "(do (use 'figwheel-sidecar.repl-api) (start-figwheel!) (cljs-repl))")
@@ -164,54 +137,6 @@
 
 ;; Enable eldoc in Clojure buffers
 (add-hook 'cider-mode-hook #'eldoc-mode)
-
-;; Some expectations features
-
-(defun my-toggle-expect-focused ()
-  (interactive)
-  (save-excursion
-    (search-backward "(expect" (cljr--point-after 'cljr--goto-toplevel))
-    (forward-word)
-    (if (looking-at "-focused")
-        (paredit-forward-kill-word)
-      (insert "-focused"))))
-
-(defun my-remove-all-focused ()
-  (interactive)
-  (save-excursion
-    (goto-char (point-min))
-    (while (search-forward "(expect-focused" nil t)
-      (delete-char -8))))
-
-(define-key clj-refactor-map
-  (cljr--key-pairs-with-modifier "C-s-" "xf") 'my-toggle-expect-focused)
-
-(define-key clj-refactor-map
-  (cljr--key-pairs-with-modifier "C-s-" "xr") 'my-remove-all-focused)
-
-;; Focus tests
-
-(defun my-toggle-focused-test ()
-  (interactive)
-  (save-excursion
-    (search-backward "(deftest " (cljr--point-after 'cljr--goto-toplevel))
-    (forward-word)
-    (if (looking-at " ^:test-refresh/focus")
-        (kill-sexp)
-      (insert " ^:test-refresh/focus"))))
-
-(defun my-blur-all-tests ()
-  (interactive)
-  (save-excursion
-    (goto-char (point-min))
-    (while (search-forward " ^:test-refresh/focus" nil t)
-      (delete-region (match-beginning 0) (match-end 0)))))
-
-(define-key clj-refactor-map
-  (cljr--key-pairs-with-modifier "C-s-" "ft") 'my-toggle-focused-test)
-
-(define-key clj-refactor-map
-  (cljr--key-pairs-with-modifier "C-s-" "bt") 'my-blur-all-tests)
 
 ;; Cycle between () {} []
 
@@ -262,84 +187,6 @@
 (define-key clojure-mode-map (kbd "C-c C-k") 'nrepl-warn-when-not-connected)
 (define-key clojure-mode-map (kbd "C-c C-n") 'nrepl-warn-when-not-connected)
 (define-key clojure-mode-map (kbd "C-c C-q") 'nrepl-warn-when-not-connected)
-
-(setq cljr-magic-require-namespaces
-      '(("io"   . "clojure.java.io")
-        ("set"  . "clojure.set")
-        ("str"  . "clojure.string")
-        ("walk" . "clojure.walk")
-        ("zip"  . "clojure.zip")
-        ("time" . "clj-time.core")
-        ("log"  . "clojure.tools.logging")
-        ("json" . "cheshire.core")))
-
-;; refer all from expectations
-
-(setq cljr-expectations-test-declaration "[expectations :refer :all]")
-
-;; Add requires to blank devcards files
-
-(defun cljr--find-source-ns-of-devcard-ns (test-ns test-file)
-  (let* ((ns-chunks (split-string test-ns "[.]" t))
-         (test-name (car (last ns-chunks)))
-         (src-dir-name (s-replace "devcards/" "src/" (file-name-directory test-file)))
-         (replace-underscore (-partial 's-replace "_" "-"))
-         (src-ns (car (--filter (or (s-prefix-p it test-name)
-                                    (s-suffix-p it test-name))
-                                (-map (lambda (file-name)
-                                        (funcall replace-underscore
-                                                 (file-name-sans-extension file-name)))
-                                      (directory-files src-dir-name))))))
-    (when src-ns
-      (mapconcat 'identity (append (butlast ns-chunks) (list src-ns)) "."))))
-
-(defun clj--find-devcards-component-name ()
-  (or
-   (ignore-errors
-     (with-current-buffer
-         (find-file-noselect (clj--src-file-name-from-cards (buffer-file-name)))
-       (save-excursion
-         (goto-char (point-max))
-         (search-backward "defcomponent ")
-         (clojure-forward-logical-sexp)
-         (skip-syntax-forward " ")
-         (let ((beg (point))
-               (end (progn (re-search-forward "\\w+")
-                           (point))))
-           (buffer-substring-no-properties beg end)))))
-   ""))
-
-(defun cljr--add-card-declarations ()
-  (save-excursion
-    (let* ((ns (clojure-find-ns))
-           (source-ns (cljr--find-source-ns-of-devcard-ns ns (buffer-file-name))))
-      (cljr--insert-in-ns ":require")
-      (when source-ns
-        (insert "[" source-ns " :refer [" (clj--find-devcards-component-name) "]]"))
-      (cljr--insert-in-ns ":require")
-      (insert (if (cljr--project-depends-on-p "reagent")
-                  "[devcards.core :refer-macros [defcard-rg]]"
-                "[devcards.core :refer-macros [defcard]]")))
-    (indent-region (point-min) (point-max))))
-
-(defun cljr--add-ns-if-blank-clj-file ()
-  (ignore-errors
-    (when (and cljr-add-ns-to-blank-clj-files
-               (cljr--clojure-ish-filename-p (buffer-file-name))
-               (= (point-min) (point-max)))
-      (insert (format "(ns %s)\n\n" (clojure-expected-ns)))
-      (when (cljr--in-tests-p)
-        (cljr--add-test-declarations))
-      (when (clj--is-card? (buffer-file-name))
-        (cljr--add-card-declarations)))))
-
-(defun clojure-mode-indent-top-level-form ()
-  (interactive)
-  (save-excursion
-    (cljr--goto-toplevel)
-    (indent-region (point)
-                   (progn (paredit-forward) (point)))))
-
 (define-key clojure-mode-map (vector 'remap 'cleanup-buffer) 'clojure-mode-indent-top-level-form)
 
 (defun clojure-mode-paredit-wrap (pre post)
@@ -388,15 +235,169 @@ the namespace in the Clojure source buffer"
 
 (define-key clojure-mode-map (kbd "C-c z") 'cider-switch-to-any-repl-buffer)
 
-;; Make q quit out of find-usages to previous window config
-
-(defadvice cljr-find-usages (before setup-grep activate)
-  (window-configuration-to-register ?$))
-
 ;; ------------
 
 ;; TODO: Loot more stuff from:
 ;;  - https://github.com/overtone/emacs-live/blob/master/packs/dev/clojure-pack/config/paredit-conf.el
 
+;;; ===========================================
+;;; clj-refactor
+;; (require 'clj-refactor)
+
+;; (setq cljr-favor-prefix-notation nil)
+;; (setq cljr-favor-private-functions nil)
+
+;;(cljr-add-keybindings-with-modifier "C-s-")
+;;(define-key clj-refactor-map (kbd "C-x C-r") 'cljr-rename-file)
+
+;;(add-hook 'clojure-mode-hook 'enable-clojure-mode-stuff)
+
+;; (defun clj-duplicate-top-level-form ()
+;;   (interactive)
+;;   (save-excursion
+;;     (cljr--goto-toplevel)
+;;     (insert (cljr--extract-sexp) "\n")
+;;     (cljr--just-one-blank-line)))
+
+;; (define-key clojure-mode-map (kbd "M-s-d") 'clj-duplicate-top-level-form)
+
+;; (add-to-list 'cljr-project-clean-functions 'cleanup-buffer)
+
+;; (define-key clojure-mode-map (kbd "C->") 'cljr-thread)
+;; (define-key clojure-mode-map (kbd "C-<") 'cljr-unwind)
+
+;; Don't warn me about the dangers of clj-refactor, fire the missiles!
+;; (setq cljr-warn-on-eval nil)
+
+;; Some expectations features
+
+;; (defun my-toggle-expect-focused ()
+;;   (interactive)
+;;   (save-excursion
+;;     (search-backward "(expect" (cljr--point-after 'cljr--goto-toplevel))
+;;     (forward-word)
+;;     (if (looking-at "-focused")
+;;         (paredit-forward-kill-word)
+;;       (insert "-focused"))))
+
+;; (defun my-remove-all-focused ()
+;;   (interactive)
+;;   (save-excursion
+;;     (goto-char (point-min))
+;;     (while (search-forward "(expect-focused" nil t)
+;;       (delete-char -8))))
+
+;; (define-key clj-refactor-map
+;;   (cljr--key-pairs-with-modifier "C-s-" "xf") 'my-toggle-expect-focused)
+
+;; (define-key clj-refactor-map
+;;   (cljr--key-pairs-with-modifier "C-s-" "xr") 'my-remove-all-focused)
+
+;; ;; Focus tests
+
+;; (defun my-toggle-focused-test ()
+;;   (interactive)
+;;   (save-excursion
+;;     (search-backward "(deftest " (cljr--point-after 'cljr--goto-toplevel))
+;;     (forward-word)
+;;     (if (looking-at " ^:test-refresh/focus")
+;;         (kill-sexp)
+;;       (insert " ^:test-refresh/focus"))))
+
+;; (defun my-blur-all-tests ()
+;;   (interactive)
+;;   (save-excursion
+;;     (goto-char (point-min))
+;;     (while (search-forward " ^:test-refresh/focus" nil t)
+;;       (delete-region (match-beginning 0) (match-end 0)))))
+
+;; (define-key clj-refactor-map
+;;   (cljr--key-pairs-with-modifier "C-s-" "ft") 'my-toggle-focused-test)
+
+;; (define-key clj-refactor-map
+;;   (cljr--key-pairs-with-modifier "C-s-" "bt") 'my-blur-all-tests)
+
+;; (setq cljr-magic-require-namespaces
+;;       '(("io"   . "clojure.java.io")
+;;         ("set"  . "clojure.set")
+;;         ("str"  . "clojure.string")
+;;         ("walk" . "clojure.walk")
+;;         ("zip"  . "clojure.zip")
+;;         ("time" . "clj-time.core")
+;;         ("log"  . "clojure.tools.logging")
+;;         ("json" . "cheshire.core")))
+
+;; ;; refer all from expectations
+
+;; (setq cljr-expectations-test-declaration "[expectations :refer :all]")
+
+;; Add requires to blank devcards files
+
+;; (defun cljr--find-source-ns-of-devcard-ns (test-ns test-file)
+;;   (let* ((ns-chunks (split-string test-ns "[.]" t))
+;;          (test-name (car (last ns-chunks)))
+;;          (src-dir-name (s-replace "devcards/" "src/" (file-name-directory test-file)))
+;;          (replace-underscore (-partial 's-replace "_" "-"))
+;;          (src-ns (car (--filter (or (s-prefix-p it test-name)
+;;                                     (s-suffix-p it test-name))
+;;                                 (-map (lambda (file-name)
+;;                                         (funcall replace-underscore
+;;                                                  (file-name-sans-extension file-name)))
+;;                                       (directory-files src-dir-name))))))
+;;     (when src-ns
+;;       (mapconcat 'identity (append (butlast ns-chunks) (list src-ns)) "."))))
+
+;; (defun clj--find-devcards-component-name ()
+;;   (or
+;;    (ignore-errors
+;;      (with-current-buffer
+;;          (find-file-noselect (clj--src-file-name-from-cards (buffer-file-name)))
+;;        (save-excursion
+;;          (goto-char (point-max))
+;;          (search-backward "defcomponent ")
+;;          (clojure-forward-logical-sexp)
+;;          (skip-syntax-forward " ")
+;;          (let ((beg (point))
+;;                (end (progn (re-search-forward "\\w+")
+;;                            (point))))
+;;            (buffer-substring-no-properties beg end)))))
+;;    ""))
+
+;; (defun cljr--add-card-declarations ()
+;;   (save-excursion
+;;     (let* ((ns (clojure-find-ns))
+;;            (source-ns (cljr--find-source-ns-of-devcard-ns ns (buffer-file-name))))
+;;       (cljr--insert-in-ns ":require")
+;;       (when source-ns
+;;         (insert "[" source-ns " :refer [" (clj--find-devcards-component-name) "]]"))
+;;       (cljr--insert-in-ns ":require")
+;;       (insert (if (cljr--project-depends-on-p "reagent")
+;;                   "[devcards.core :refer-macros [defcard-rg]]"
+;;                 "[devcards.core :refer-macros [defcard]]")))
+;;     (indent-region (point-min) (point-max))))
+
+;; (defun cljr--add-ns-if-blank-clj-file ()
+;;   (ignore-errors
+;;     (when (and cljr-add-ns-to-blank-clj-files
+;;                (cljr--clojure-ish-filename-p (buffer-file-name))
+;;                (= (point-min) (point-max)))
+;;       (insert (format "(ns %s)\n\n" (clojure-expected-ns)))
+;;       (when (cljr--in-tests-p)
+;;         (cljr--add-test-declarations))
+;;       (when (clj--is-card? (buffer-file-name))
+;;         (cljr--add-card-declarations)))))
+
+;; (defun clojure-mode-indent-top-level-form ()
+;;   (interactive)
+;;   (save-excursion
+;;     (cljr--goto-toplevel)
+;;     (indent-region (point)
+;;                    (progn (paredit-forward) (point)))))
+
+;; Make q quit out of find-usages to previous window config
+
+;; (defadvice cljr-find-usages (before setup-grep activate)
+;;   (window-configuration-to-register ?$))
+;;; ===========================================
 
 (provide 'setup-clojure-mode)
